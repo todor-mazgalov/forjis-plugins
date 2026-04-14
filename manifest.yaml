@@ -1,0 +1,57 @@
+name: forjis-standard
+version: 1.0.0
+description: "Standard Forjis resource repository — agents, skills, hooks, and plugins"
+
+contents:
+  agents:
+    - forjis-explorer
+    - forjis-analyst
+    - forjis-fullstack-architect
+    - forjis-fullstack-developer
+    - forjis-fullstack-reviewer
+    - forjis-api-architect
+    - forjis-api-developer
+    - forjis-api-reviewer
+    - forjis-assessor
+    - forjis-backend-architect
+    - forjis-backend-developer
+    - forjis-backend-reviewer
+    - forjis-frontend-architect
+    - forjis-frontend-developer
+    - forjis-frontend-reviewer
+    - forjis-design-consultant
+    - forjis-designer
+    - forjis-persona
+    - forjis-strategist
+    - forjis-setup
+    - forjis-finish
+  skills:
+    # software-dev
+    - js
+    - ts
+    - java
+    - go
+    - postgre
+    - solidjs
+    - node-ts
+    - ui
+    - android
+    - swift
+    - shadcn
+    - react-native
+    # meta / tooling
+    - theme-factory
+    - mcp-builder
+    # salesforce
+    - sf-apex
+    - sf-lwc
+    - sf-soql
+    - sf-testing
+    # meta
+    - skill-creator
+  hooks:
+    - security-check
+    - code-quality
+  plugins:
+    - software-dev
+    - salesforce

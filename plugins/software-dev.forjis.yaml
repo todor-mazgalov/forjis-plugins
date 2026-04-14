@@ -1,0 +1,354 @@
+name: software-dev
+version: 1.0.0
+description: "Standard software development pipeline with per-technology teams under an RnD organization"
+
+requires:
+  agents:
+    - forjis-explorer
+    - forjis-analyst
+    - forjis-assessor
+    - forjis-backend-architect
+    - forjis-backend-developer
+    - forjis-backend-reviewer
+    - forjis-api-architect
+    - forjis-api-developer
+    - forjis-api-reviewer
+    - forjis-frontend-architect
+    - forjis-frontend-developer
+    - forjis-frontend-reviewer
+    - forjis-fullstack-architect
+    - forjis-fullstack-developer
+    - forjis-fullstack-reviewer
+  skills:
+    - java
+    - go
+    - js
+    - ts
+    - node-ts
+    - solidjs
+    - ui
+    - shadcn
+    - android
+    - swift
+    - react-native
+    - postgre
+  hooks: [security-check, code-quality]
+
+orgs:
+  - name: RnD
+    teams:
+      # ---------- shared research team ----------
+      - name: Research
+        roles:
+          - name: Explorer
+            agent: forjis-explorer
+          - name: Analyst
+            agent: forjis-analyst
+          - name: Assessor
+            agent: forjis-assessor
+            stage: assessor
+            expertise: "Outcome assessment — scoring task completion against metrics"
+            outcomes: [dev]
+
+      # ---------- backend + API teams ----------
+      - name: Java
+        roles:
+          - name: Architect
+            agent: forjis-backend-architect
+            skills: [java]
+            expertise: "Java backend and API architecture"
+          - name: BackendDev
+            agent: forjis-backend-developer
+            skills: [java]
+            expertise: "Java backend services, domain models"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: APIDev
+            agent: forjis-api-developer
+            skills: [java]
+            expertise: "Java API endpoints, DTOs, validation, error handling"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: BackendReviewer
+            agent: forjis-backend-reviewer
+            skills: [java]
+            expertise: "Review Java backend services and domain logic"
+            stage: reviewer
+          - name: APIReviewer
+            agent: forjis-api-reviewer
+            skills: [java]
+            expertise: "Review Java API endpoints and DTOs"
+            stage: reviewer
+
+      - name: Go
+        roles:
+          - name: Architect
+            agent: forjis-backend-architect
+            skills: [go]
+            expertise: "Go backend and API architecture"
+          - name: BackendDev
+            agent: forjis-backend-developer
+            skills: [go]
+            expertise: "Go backend services, domain models"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: APIDev
+            agent: forjis-api-developer
+            skills: [go]
+            expertise: "Go API endpoints, handlers, validation"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: BackendReviewer
+            agent: forjis-backend-reviewer
+            skills: [go]
+            expertise: "Review Go backend services"
+            stage: reviewer
+          - name: APIReviewer
+            agent: forjis-api-reviewer
+            skills: [go]
+            expertise: "Review Go API endpoints"
+            stage: reviewer
+
+      - name: NodeJS
+        roles:
+          - name: Architect
+            agent: forjis-backend-architect
+            skills: [node-ts, js]
+            expertise: "Node.js backend and API architecture"
+          - name: BackendDev
+            agent: forjis-backend-developer
+            skills: [node-ts, js]
+            expertise: "Node.js backend services, domain models"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: APIDev
+            agent: forjis-api-developer
+            skills: [node-ts, js]
+            expertise: "Node.js API endpoints, DTOs, validation"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: BackendReviewer
+            agent: forjis-backend-reviewer
+            skills: [node-ts, js]
+            expertise: "Review Node.js backend services"
+            stage: reviewer
+          - name: APIReviewer
+            agent: forjis-api-reviewer
+            skills: [node-ts, js]
+            expertise: "Review Node.js API endpoints"
+            stage: reviewer
+
+      # ---------- frontend teams ----------
+      - name: SolidJS
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [solidjs, ts, ui, shadcn]
+            expertise: "SolidJS frontend architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [solidjs, ts, ui, shadcn]
+            expertise: "SolidJS components, routing, state management"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [solidjs, ts, ui, shadcn]
+            expertise: "Review SolidJS components and UI logic"
+            stage: reviewer
+
+      - name: JavaScript
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [js, shadcn]
+            expertise: "JavaScript frontend architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [js, shadcn]
+            expertise: "JavaScript frontend components and logic"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [js, shadcn]
+            expertise: "Review JavaScript frontend code"
+            stage: reviewer
+
+      - name: TypeScript
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [ts, shadcn]
+            expertise: "TypeScript frontend architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [ts, shadcn]
+            expertise: "TypeScript frontend components and logic"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [ts, shadcn]
+            expertise: "Review TypeScript frontend code"
+            stage: reviewer
+
+      - name: Android
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [android]
+            expertise: "Android app architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [android]
+            expertise: "Android UI, screens, navigation, state"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [android]
+            expertise: "Review Android app code"
+            stage: reviewer
+
+      - name: iOS
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [swift]
+            expertise: "iOS app architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [swift]
+            expertise: "iOS UI, screens, navigation, state"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [swift]
+            expertise: "Review iOS app code"
+            stage: reviewer
+
+      - name: ReactNative
+        roles:
+          - name: Architect
+            agent: forjis-frontend-architect
+            skills: [react-native, ui]
+            expertise: "React Native cross-platform app architecture"
+          - name: Developer
+            agent: forjis-frontend-developer
+            skills: [react-native, ui]
+            expertise: "React Native components, navigation, state"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-frontend-reviewer
+            skills: [react-native, ui]
+            expertise: "Review React Native app code"
+            stage: reviewer
+
+      # ---------- database team ----------
+      - name: PostgreSQL
+        roles:
+          - name: Architect
+            agent: forjis-backend-architect
+            skills: [postgre]
+            expertise: "PostgreSQL schema and database architecture"
+          - name: Developer
+            agent: forjis-backend-developer
+            skills: [postgre]
+            expertise: "PostgreSQL schema design, migrations, queries"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+          - name: Reviewer
+            agent: forjis-backend-reviewer
+            skills: [postgre]
+            expertise: "Review PostgreSQL schemas and query design"
+            stage: reviewer
+
+pipeline:
+  mode: swarm
+  finish: manual
+  max_parallel: 4
+  allowed_tools:
+    - Read
+    - Write
+    - Edit
+    - Bash
+    - Glob
+    - Grep
+    - Agent
+    - WebFetch
+
+constraints:
+  - name: git
+    mandatory: >
+      Do NOT run git push, all changes must be contained in local branches only.
+      Always respect the .gitignore file
+      Always branch from the current git branch. When ready merge to forjis/stage
+      (create if not exists) and clean up created branch.
+
+
+outcome:
+  enabled: true
+  default_action: halt
+  default_max_retries: 2
+  groups:
+    - name: dev
+      rules:
+        - fail: "security_score < 70"
+          action: halt
+        - fail: "test_validation < 50"
+          action: retry
+        - warning: "test_coverage < 70"
+        - warning: "security_score < 90"
+      metrics:
+        security_score:
+          description: "Evaluate adherence to security best practices"
+          criteria:
+            - "No hardcoded secrets or credentials"
+            - "Input validation on all external data"
+            - "SQL injection prevention via parameterized queries"
+            - "Authentication checks on protected endpoints"
+          scale: "0 = critical vulnerabilities found, 100 = fully secure"
+        test_coverage:
+          description: "Evaluate completeness of test coverage"
+          criteria:
+            - "All acceptance criteria have corresponding tests"
+            - "Edge cases and error paths are tested"
+            - "No untested public API surface"
+          scale: "0 = no tests, 100 = comprehensive coverage"
+        test_validation:
+          description: "Validate task output by discovering and executing project test suites"
+          criteria:
+            - "Discover test runners and test commands in the target project"
+            - "Execute discovered test suites within safety guardrails"
+            - "Compute pass rate as weighted average across all suites"
+            - "Score 100 when no test tools found or tests skipped for safety"
+          scale: "0 = all tests failing, 50 = test commands fail to start, 100 = all tests passing or no tests found"

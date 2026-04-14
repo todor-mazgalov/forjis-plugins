@@ -1,0 +1,21 @@
+name: salesforce
+version: 1.0.0
+description: "Salesforce development skills — Apex, Lightning Web Components, SOQL, and testing"
+
+requires:
+  agents: []
+  skills: [sf-apex, sf-lwc, sf-soql, sf-testing]
+  hooks: []
+
+pipeline:
+  mode: org
+  finish: manual
+  max_parallel: 4
+  allowed_tools:
+    - Read
+    - Write
+    - Edit
+    - Bash
+    - Glob
+    - Grep
+    - Agent
