@@ -24,6 +24,7 @@ contents:
     - forjis-persona
     - forjis-strategist
     - forjis-setup
+    - forjis-cloudops
     - forjis-finish
   skills:
     # software-dev
@@ -39,6 +40,8 @@ contents:
     - swift
     - shadcn
     - react-native
+    # cloud / infra
+    - aws-cfn
     # meta / tooling
     - theme-factory
     - mcp-builder

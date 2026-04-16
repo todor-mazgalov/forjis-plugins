@@ -19,6 +19,7 @@ requires:
     - forjis-fullstack-architect
     - forjis-fullstack-developer
     - forjis-fullstack-reviewer
+    - forjis-cloudops
   skills:
     - java
     - go
@@ -32,6 +33,7 @@ requires:
     - swift
     - react-native
     - postgre
+    - aws-cfn
   hooks: [security-check, code-quality]
 
 orgs:
@@ -290,7 +292,26 @@ orgs:
             agent: forjis-backend-reviewer
             skills: [postgre]
             expertise: "Review PostgreSQL schemas and query design"
-            stage: reviewer
+            stage: reviewer  
+  - name: CloudOps
+    teams:
+      - name: Guard
+        roles:
+          - name: CloudAssessor
+            agent: forjis-assessor
+            stage: assessor
+            expertise: "Outcome assessment — scoring task completion against metrics"
+            outcomes: [cloudops]
+      - name: AWS
+        roles:
+          - name: CloudFormation
+            agent: forjis-cloudops
+            skills: [aws-cfn]
+            expertise: "AWS CloudFormation infrastructure — VPC, IAM, compute, storage, monitoring"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
 
 pipeline:
   mode: swarm
@@ -352,3 +373,47 @@ outcome:
             - "Compute pass rate as weighted average across all suites"
             - "Score 100 when no test tools found or tests skipped for safety"
           scale: "0 = all tests failing, 50 = test commands fail to start, 100 = all tests passing or no tests found"
+    - name: cloudops
+      rules:
+        - fail: "security_score < 80"
+          action: halt
+        - fail: "iam_least_privilege < 70"
+          action: halt
+        - fail: "encryption_coverage < 90"
+          action: retry
+        - warning: "cost_optimization < 70"
+        - warning: "security_score < 95"
+      metrics:
+        security_score:
+          description: "Evaluate infrastructure security posture"
+          criteria:
+            - "No wildcard IAM actions or resources without documented justification"
+            - "No publicly exposed resources unless explicitly required"
+            - "Security groups restrict ingress to specific CIDRs or SG references"
+            - "Secrets managed via provider secrets service, never hardcoded"
+            - "Logging and audit trails enabled on all applicable resources"
+          scale: "0 = critical security gaps, 100 = fully hardened"
+        iam_least_privilege:
+          description: "Evaluate IAM policy adherence to least-privilege"
+          criteria:
+            - "No Action: * or Resource: * without scoped condition keys"
+            - "Service roles scoped to specific resources"
+            - "No inline policies where managed policies suffice"
+            - "Cross-account access uses external ID or conditions"
+          scale: "0 = wide-open permissions, 100 = tightly scoped least-privilege"
+        encryption_coverage:
+          description: "Evaluate encryption at rest and in transit"
+          criteria:
+            - "All storage resources encrypted with KMS or provider key management"
+            - "All data in transit uses TLS 1.2+"
+            - "Key rotation enabled where supported"
+            - "No unencrypted data stores"
+          scale: "0 = no encryption, 100 = full encryption coverage"
+        cost_optimization:
+          description: "Evaluate cost-effectiveness of provisioned resources"
+          criteria:
+            - "Resource sizes justified by workload requirements"
+            - "Auto-scaling configured where applicable"
+            - "Lifecycle policies on storage resources"
+            - "No over-provisioned resources without justification"
+          scale: "0 = wasteful over-provisioning, 100 = right-sized and optimized"
