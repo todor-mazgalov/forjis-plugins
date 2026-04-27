@@ -1,21 +1,227 @@
 name: salesforce
 version: 1.0.0
-description: "Salesforce development skills — Apex, Lightning Web Components, SOQL, and testing"
+description: "Salesforce development pipeline — Apex, LWC, SOQL, testing under an RnD organization"
 
 requires:
-  agents: []
-  skills: [sf-apex, sf-lwc, sf-soql, sf-testing]
-  hooks: []
+  agents:
+    - forjis-explorer
+    - forjis-analyst
+    - forjis-assessor
+    - forjis-fullstack-architect
+    - forjis-backend-developer
+    - forjis-backend-reviewer
+    - forjis-frontend-developer
+    - forjis-frontend-reviewer
+    - forjis-fullstack-developer
+    - forjis-fullstack-reviewer
+  skills:
+    - sf-apex
+    - sf-lwc
+    - sf-soql
+    - sf-testing
+  hooks: [security-check, code-quality]
+
+orgs:
+  - name: RnD
+    teams:
+      - name: Research
+        roles:
+          - name: Explorer
+            agent: forjis-explorer
+          - name: Analyst
+            agent: forjis-analyst
+          - name: Assessor
+            agent: forjis-assessor
+            stage: assessor
+            expertise: "Score Salesforce task completion against the salesforce outcome group"
+            outcomes: [salesforce]
+
+      - name: Salesforce
+        roles:
+          - name: Architect
+            agent: forjis-fullstack-architect
+            skills: [sf-apex, sf-lwc, sf-soql, sf-testing]
+            expertise: "Cross-cutting Salesforce architecture; owns sharing/security model and packaging boundaries"
+
+          - name: ApexDev
+            agent: forjis-backend-developer
+            skills: [sf-apex, sf-soql]
+            expertise: "Apex domain & service layer; owns bulkification and async sizing decisions"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+
+          - name: ApexReviewer
+            agent: forjis-backend-reviewer
+            skills: [sf-apex, sf-soql]
+            expertise: "Reviewer pivot on ApexDev — gates bulkification, FLS/CRUD, sharing, async correctness"
+            stage: reviewer
+
+          - name: LWCDev
+            agent: forjis-frontend-developer
+            skills: [sf-lwc]
+            expertise: "LWC component layer; owns @wire-vs-imperative and event-design choices"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+
+          - name: LWCReviewer
+            agent: forjis-frontend-reviewer
+            skills: [sf-lwc]
+            expertise: "Reviewer pivot on LWCDev — gates LWS, accessibility, lifecycle correctness"
+            stage: reviewer
+
+          - name: SOQLDev
+            agent: forjis-backend-developer
+            skills: [sf-soql]
+            expertise: "SOQL access patterns; owns query selectivity and large-data-volume strategy"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+
+          - name: SOQLReviewer
+            agent: forjis-backend-reviewer
+            skills: [sf-soql]
+            expertise: "Reviewer pivot on SOQLDev — gates index use, selectivity, FLS enforcement"
+            stage: reviewer
+
+          - name: TestingDev
+            agent: forjis-fullstack-developer
+            skills: [sf-testing, sf-apex]
+            expertise: "Apex + LWC test layer; owns coverage, isolation, mocking, bulk scenarios"
+            stage: developer
+            hooks:
+              pre: [security-check]
+              validation: [code-quality]
+
+          - name: TestingReviewer
+            agent: forjis-fullstack-reviewer
+            skills: [sf-testing, sf-apex]
+            expertise: "Reviewer pivot on TestingDev — gates assertions, isolation, negative/bulk paths"
+            stage: reviewer
 
 pipeline:
-  mode: org
+  mode: swarm
   finish: manual
   max_parallel: 4
-  allowed_tools:
-    - Read
-    - Write
-    - Edit
-    - Bash
-    - Glob
-    - Grep
-    - Agent
+  allowed_tools: [Read, Write, Edit, Bash, Glob, Grep, Agent, WebFetch]
+
+constraints:
+  - name: rate_limits
+    mandatory: |
+      Salesforce rate-limit discipline — violations cause throttling, suspension, or overage billing.
+      Applies to all Apex/LWC/SOQL/async/callout code:
+        - Bulkified DML and SOQL; no per-record queries, DML, or callouts.
+        - SOQL bounded with LIMIT and selective indexed WHERE; no unbounded SELECTs or non-selective queries on large objects.
+        - SELECT only required fields.
+        - Cache reads via @wire cacheable=true, Platform Cache, Custom Metadata, or Custom Settings where read-mostly.
+        - No LWC polling — use Streaming, Platform Events, or empApi. Polling needs explicit justification.
+        - Composite/Batch/Collection APIs to consolidate fan-out requests.
+        - Streaming subscriptions and PushTopic filters narrowly scoped.
+        - Async Apex sized to stay under daily execution and async job allocations.
+        - Callouts: exponential backoff + jitter + circuit-breaker; honor Retry-After; no tight retry loops.
+        - Tests mock callouts via HttpCalloutMock or Stub API; no real external requests.
+        - No recursive triggers or cascading updates that multiply DML volume; guard with static recursion flags.
+
+  - name: metadata_safety
+    mandatory: |
+      Plugin output deploys to UAT and production. Destructive metadata changes are not undoable from a backup-free state.
+      Required for any deployable metadata change:
+        - destructiveChanges.xml entries: justified in the task AND data exported/backed up.
+        - Lossy field type changes (text→number, picklist→text, multi→single, encrypted↔plain): forbidden without sandbox-validated migration plan.
+        - API name changes on existing fields/objects/classes/LWCs: ship consumer-update steps for every Apex/LWC/Flow/validation rule/report/integration referencing the old name.
+        - Required ↔ optional flips: validate all callers handle both states during rollout.
+        - Profile/PermSet/PermSetGroup/Sharing Rule edits: enumerate affected users and access delta; never broaden by default; Modify All / View All requires task approval.
+        - sfdx-project.json: pin specific managed package versions; never "latest" or unversioned.
+        - Scratch-org-only artifacts (project-scratch-def.json, scratch-only permsets, sample data) excluded from any UAT/prod package.
+        - Validation-only deploy (sf project deploy validate, same test level as real deploy) MUST pass before any deploy with destructive or schema-altering metadata.
+        - Layout/Flow/Apex changes touching active record types or live business processes: require documented rollback plan in the task.
+
+outcome:
+  enabled: true
+  default_action: retry
+  default_max_retries: 2
+  groups:
+    - name: salesforce
+      rules:
+        - fail: "security_score < 70"
+          action: halt
+        - fail: "apex_test_coverage < 75"
+        - fail: "governor_limit_safety < 60"
+        - fail: "soql_quality < 60"
+        - fail: "lwc_quality < 60"
+        - fail: "test_quality < 50"
+        - fail: "api_efficiency < 70"
+        - fail: "metadata_safety < 70"
+        - warning: "security_score < 90"
+        - warning: "apex_test_coverage < 85"
+        - warning: "governor_limit_safety < 80"
+        - warning: "lwc_quality < 80"
+        - warning: "api_efficiency < 85"
+        - warning: "metadata_safety < 90"
+      metrics:
+        security_score:
+          description: "Salesforce security posture (Apex, LWC, SOQL)"
+          criteria:
+            - "FLS/CRUD enforced via Schema, SECURITY_ENFORCED, or USER_MODE"
+            - "Sharing model respected; with sharing default, inherited sharing justified"
+            - "No hardcoded credentials, session IDs, or org-specific IDs"
+            - "SOQL injection blocked via bind variables or escapeSingleQuotes"
+            - "Callouts via Named Credentials only"
+            - "No unsafe DOM in LWC (innerHTML, lwc:dom='manual' without sanitization)"
+          scale: "0 = critical vulnerabilities, 100 = fully hardened"
+        apex_test_coverage:
+          description: "Apex coverage vs. Salesforce deploy thresholds"
+          criteria:
+            - "Org-wide ≥ 75% (production deploy minimum)"
+            - "Every trigger ≥ 1% (platform requirement)"
+            - "Each new/modified class ≥ 75% individually"
+            - "Assertions map to acceptance criteria, not just code execution"
+          scale: "0 = under 50%, 75 = deploy minimum, 100 = 90%+ with meaningful assertions"
+        governor_limit_safety:
+          description: "Per-transaction governor limits (one execution context)"
+          criteria:
+            - "No SOQL or DML in for-loops"
+            - "Bulk DML on Lists; triggers handle 200-record batches"
+            - "Heap ≤ 6MB sync / 12MB async; CPU ≤ 10s sync / 60s async"
+            - "Query rows ≤ 50k/txn; DML rows ≤ 10k/txn"
+          scale: "0 = single-record assumptions and ceiling violations, 100 = bulkified within all per-txn limits"
+        soql_quality:
+          description: "SOQL selectivity and safety"
+          criteria:
+            - "Filters on indexed fields (Id, Name, custom-indexed, External Id, Lookup)"
+            - "No non-selective queries on large objects without justification"
+            - "Relationship queries used; no nested SOQL in loops"
+            - "SECURITY_ENFORCED / USER_MODE for end-user contexts"
+            - "Row counts bounded (LIMIT, selective WHERE)"
+          scale: "0 = unselective and unsafe, 100 = selective, secure, limit-aware"
+        lwc_quality:
+          description: "LWC quality and platform compliance"
+          criteria:
+            - "Lightning Web Security / Locker respected"
+            - "Reactive props and @wire correct; no manual DOM mutation"
+            - "Lifecycle hooks used appropriately"
+            - "CustomEvent conventions; composed/bubbles intentional"
+            - "Accessibility: ARIA, semantic HTML, keyboard nav, focus management"
+            - "@wire preferred over imperative when sufficient; cacheable=true where appropriate"
+          scale: "0 = anti-patterns and security violations, 100 = idiomatic, accessible, secure"
+        test_quality:
+          description: "Salesforce test discipline"
+          criteria:
+            - "@isTest isolated; SeeAllData=true avoided unless justified"
+            - "Test data via factories or @testSetup; no queries against org data"
+            - "Test.startTest/stopTest around the unit under test"
+            - "Meaningful assertions (System.assertEquals with messages)"
+            - "Negative, bulk (200-record), and async paths covered"
+            - "LWC Jest tests cover rendering, events, wired data"
+            - "External deps mocked via Stub API or HttpCalloutMock"
+          scale: "0 = no/coverage-only tests, 100 = comprehensive, isolated, asserted"
+        api_efficiency:
+          description: "Score 0–100 against the rate_limits constraint criteria"
+          scale: "0 = patterns at risk of daily-limit exhaustion, throttling, or overage billing; 100 = lean aggregate consumption"
+        metadata_safety:
+          description: "Score 0–100 against the metadata_safety constraint criteria"
+          scale: "0 = destructive/irreversible changes shipped without justification, migration plan, or rollback; 100 = all metadata changes safe, justified, reversible"
