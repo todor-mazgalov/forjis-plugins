@@ -220,8 +220,24 @@ outcome:
             - "External deps mocked via Stub API or HttpCalloutMock"
           scale: "0 = no/coverage-only tests, 100 = comprehensive, isolated, asserted"
         api_efficiency:
-          description: "Score 0–100 against the rate_limits constraint criteria"
+          description: "Org-level rate-limit and request-efficiency posture (per the rate_limits constraint)"
+          criteria:
+            - "Bulkified DML, SOQL, and callouts; no per-record fan-out"
+            - "SOQL: selective indexed WHERE, LIMIT, only required fields"
+            - "Read-mostly data cached (@wire cacheable, Platform Cache, Custom Metadata/Settings)"
+            - "Push over poll: Streaming, Platform Events, or empApi; polling justified"
+            - "Composite/Batch/Collection APIs consolidate fan-out; async sized to daily allocations"
+            - "Callouts use backoff + jitter + circuit-breaker, honor Retry-After; tests mock externals"
+            - "No recursive triggers or cascading updates without static recursion guards"
           scale: "0 = patterns at risk of daily-limit exhaustion, throttling, or overage billing; 100 = lean aggregate consumption"
         metadata_safety:
-          description: "Score 0–100 against the metadata_safety constraint criteria"
+          description: "Safety of deployable metadata changes against UAT/prod (per the metadata_safety constraint)"
+          criteria:
+            - "Destructive changes justified with data backup; lossy field changes need sandbox-validated migration"
+            - "API renames ship consumer updates for every Apex/LWC/Flow/rule/report/integration reference"
+            - "Required ↔ optional flips validated against all callers during rollout"
+            - "Profile/PermSet/Sharing edits enumerate access delta; no default broadening; Modify All / View All approved"
+            - "Managed packages pinned to specific versions; scratch-only artifacts excluded from UAT/prod"
+            - "Validation deploy at prod test level passes before destructive or schema-altering deploys"
+            - "Changes to active record types or live processes ship a documented rollback plan"
           scale: "0 = destructive/irreversible changes shipped without justification, migration plan, or rollback; 100 = all metadata changes safe, justified, reversible"
